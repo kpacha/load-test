@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+{{ template "headHTML" "Dashboard" }}
+  <body>
+    {{ template "navBarHTML" . }}
+    <div class="container-fluid">
+      <div class="row">
+
+        {{ template "sideNavHTML" . }}
+
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">
+          <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+            <h1 class="h2">New Load Test</h1>
+          </div>
+
+          <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+            <form class="col-md-12" action="/test" method="post" role="form">
+              <div class="row">
+                  <div class="col form-group">
+                    <label for="name">Name</label>
+                    <input type="text" class="form-control" id="name" name="name" placeholder="Name of the test">
+                  </div>
+              </div>
+              <div class="row">
+                  <div class="col form-group">
+                    <label for="url">URL</label>
+                    <input type="text" class="form-control form-control-lg" id="url" name="url" aria-describedby="urlHelp" placeholder="http://example.com/endpoint">
+                    <small id="urlHelp" class="form-text text-muted">Enter the URL you want to test.</small>
+                  </div>
+              </div>
+
+              <div class="row">
+                <div class="col form-group">
+                    <label for="min">Min Concurrency</label>
+                    <input type="number" class="form-control" id="min" name="min" value="1">
+                </div>
+                <div class="col form-group">
+                    <label for="max">Max Concurrency</label>
+                    <input type="number" class="form-control" id="max" name="max" value="150">
+                </div>
+                <div class="col form-group">
+                    <label for="steps">Step Size</label>
+                    <input type="number" class="form-control" id="steps" name="steps" value="15">
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col form-group">
+                    <label for="duration">Max duration</label>
+                    <input type="number" class="form-control" id="duration" name="duration" value="10">
+                </div>
+                <div class="col form-group">
+                    <label for="sleep">Sleep</label>
+                    <input type="number" class="form-control" id="sleep" name="sleep" value="15">
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/feather-icons/dist/feather.min.js"></script>
+    <script>
+      feather.replace()
+    </script>
+  </body>
+</html>
