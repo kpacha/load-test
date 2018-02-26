@@ -37,6 +37,7 @@ $ load-test -h
 Usage of ./load-test:
   -f string
     	path to use as store (default ".")
+  -m	use in-memory store instead of the fs persistent one
   -p int
     	port to expose the html ui (default 7879)
 ```
