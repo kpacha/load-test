@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
@@ -22,15 +21,10 @@ type Server struct {
 }
 
 func (s *Server) Run() {
-	names := []string{}
-	fs, _ := ioutil.ReadDir("templates")
-	for _, f := range fs {
-		names = append(names, "templates/"+f.Name())
-	}
 	s.Engine.SetFuncMap(template.FuncMap{
 		"formatLatency": formatLatency,
 	})
-	s.Engine.LoadHTMLFiles(names...)
+	s.Engine.LoadHTMLGlob("templates/*.html")
 
 	s.Engine.POST("/test", s.testHandler)
 	s.Engine.GET("/browse/:id", s.browseHandler)
@@ -44,7 +38,7 @@ func (s *Server) homeHandler(c *gin.Context) {
 		c.AbortWithError(500, err)
 		return
 	}
-	c.HTML(200, "index.html", gin.H{
+	c.HTML(200, "index", gin.H{
 		"keys": keys,
 	})
 }
@@ -72,7 +66,7 @@ func (s *Server) browseHandler(c *gin.Context) {
 		c.AbortWithError(500, err)
 		return
 	}
-	c.HTML(200, "browse.html", gin.H{
+	c.HTML(200, "browse", gin.H{
 		"keys":    keys,
 		"reports": reports,
 		"id":      id,
