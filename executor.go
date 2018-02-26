@@ -14,39 +14,6 @@ import (
 	"github.com/kpacha/load-test/requester"
 )
 
-type Executor interface {
-	Run(ctx context.Context, plan Plan) error
-}
-
-func NewExecutor(store db.DB) Executor {
-	return &executor{store}
-}
-
-type executor struct {
-	DB db.DB
-}
-
-func (e *executor) Run(ctx context.Context, plan Plan) error {
-	work.Lock()
-	defer work.Unlock()
-	report, err := plan.Run(ctx)
-	if err != nil {
-		return err
-	}
-
-	data := &bytes.Buffer{}
-	if err := json.NewEncoder(data).Encode(report); err != nil {
-		return err
-	}
-
-	_, err = e.DB.Set(plan.Name, data)
-	return err
-}
-
-var (
-	work = &sync.Mutex{}
-)
-
 type Plan struct {
 	Name     string
 	Min      int
@@ -61,11 +28,41 @@ func (e Plan) String() string {
 	return fmt.Sprintf("C: %d [%d-%d], Duration: %s", e.Steps, e.Min, e.Max, e.Duration.String())
 }
 
-func (e Plan) Run(ctx context.Context) ([]requester.Report, error) {
+type Executor interface {
+	Run(ctx context.Context, plan Plan) error
+}
+
+func NewExecutor(store db.DB) Executor {
+	return &executor{store}
+}
+
+type executor struct {
+	DB db.DB
+}
+
+func (e *executor) Run(ctx context.Context, plan Plan) error {
+	report, err := e.executePlan(ctx, plan)
+	if err != nil {
+		return err
+	}
+
+	data := &bytes.Buffer{}
+	if err := json.NewEncoder(data).Encode(report); err != nil {
+		return err
+	}
+
+	_, err = e.DB.Set(plan.Name, data)
+	return err
+}
+
+func (e *executor) executePlan(ctx context.Context, plan Plan) ([]requester.Report, error) {
+	work.Lock()
+	defer work.Unlock()
+
 	results := []requester.Report{}
 
-	for i := e.Min; i < e.Max; i += e.Steps {
-		time.Sleep(e.Sleep)
+	for i := plan.Min; i < plan.Max; i += plan.Steps {
+		time.Sleep(plan.Sleep)
 		select {
 		case <-ctx.Done():
 			return results, ctx.Err()
@@ -74,23 +71,25 @@ func (e Plan) Run(ctx context.Context) ([]requester.Report, error) {
 		log.Printf("runing with C=%d ...\n", i)
 
 		localCtx := ctx
-		if e.Duration > 0 {
-			lctx, localCancel := context.WithTimeout(ctx, e.Duration)
+		if plan.Duration > 0 {
+			lctx, localCancel := context.WithTimeout(ctx, plan.Duration)
 			defer localCancel()
 			localCtx = lctx
 		}
 
-		r := requester.NewJSON(e.Request).Run(localCtx, i)
+		r := requester.NewJSON(plan.Request).Run(localCtx, i)
 
 		report := requester.Report{}
 		if err := json.NewDecoder(r).Decode(&report); err != nil {
 			return results, err
 		}
 		report.C = i
-		report.URL = e.Request.URL.String()
+		report.URL = plan.Request.URL.String()
 
 		results = append(results, report)
 	}
 
 	return results, nil
 }
+
+var work = &sync.Mutex{}
