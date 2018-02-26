@@ -18,6 +18,7 @@ type Server struct {
 	Engine   *gin.Engine
 	DB       db.DB
 	Executor Executor
+	Addr     string
 }
 
 func (s *Server) Run() {
@@ -34,7 +35,7 @@ func (s *Server) Run() {
 	s.Engine.POST("/test", s.testHandler)
 	s.Engine.GET("/browse/:id", s.browseHandler)
 	s.Engine.GET("/", s.homeHandler)
-	s.Engine.Run(":7879")
+	s.Engine.Run(s.Addr)
 }
 
 func (s *Server) homeHandler(c *gin.Context) {

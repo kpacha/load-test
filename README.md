@@ -33,6 +33,8 @@ make prepare all
 Usage of ./load-test:
   -f string
     	path to use as store (default ".")
+  -p int
+    	port to expose the html ui (default 7879)
 ```
 
 ```
