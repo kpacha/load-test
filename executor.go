@@ -32,12 +32,15 @@ type Executor interface {
 	Run(ctx context.Context, plan Plan) ([]requester.Report, error)
 }
 
+type RequesterFactory func(req *http.Request) requester.Requester
+
 func NewExecutor(store db.DB) Executor {
-	return &executor{store}
+	return &executor{store, requester.NewJSON}
 }
 
 type executor struct {
-	DB db.DB
+	DB               db.DB
+	RequesterFactory RequesterFactory
 }
 
 func (e *executor) Run(ctx context.Context, plan Plan) ([]requester.Report, error) {
@@ -80,7 +83,7 @@ func (e *executor) executePlan(ctx context.Context, plan Plan) ([]requester.Repo
 			localCtx = lctx
 		}
 
-		r := requester.NewJSON(plan.Request).Run(localCtx, i)
+		r := e.RequesterFactory(plan.Request).Run(localCtx, i)
 
 		report := requester.Report{}
 		if err := json.NewDecoder(r).Decode(&report); err != nil {
