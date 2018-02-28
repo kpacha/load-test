@@ -35,11 +35,15 @@ type Requester struct {
 
 func (r Requester) Run(ctx context.Context, c int) io.Reader {
 	buf := bytes.NewBuffer([]byte{})
+	body := &bytes.Buffer{}
+	body.ReadFrom(r.Request.Body)
+	r.Request.Body.Close()
+
 	work := requester.Work{
 		N:           r.N,
 		C:           c,
 		Timeout:     r.Timeout,
-		RequestBody: make([]byte, 0),
+		RequestBody: body.Bytes(),
 		Request:     r.Request,
 		Output:      r.Tmpl,
 		Writer:      buf,
