@@ -33,7 +33,7 @@
   branch = "custom_output_formatter"
   name = "github.com/rakyll/hey"
   packages = ["requester"]
-  revision = "fbb8d2ef47786292181d14a4de8c033a94c93db0"
+  revision = "6369dbfd2e54b18cb22208369a145df676960b68"
   source = "github.com/kpacha/hey"
 
 [[projects]]
