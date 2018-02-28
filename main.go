@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"os"
+	"os/signal"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kpacha/load-test/db"
@@ -21,11 +24,22 @@ func main() {
 		store = db.NewFS(*storePath)
 	}
 
-	server := Server{
-		Engine:   gin.New(),
-		DB:       store,
-		Executor: NewExecutor(store),
-		Addr:     fmt.Sprintf(":%d", *port),
+	quit := make(chan os.Signal)
+	signal.Notify(quit, os.Interrupt)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		<-quit
+		cancel()
+	}()
+
+	server, err := NewServer(gin.New(), store, NewExecutor(store))
+	if err != nil {
+		fmt.Println("error building the server:", err.Error())
+		return
 	}
-	server.Run()
+
+	fmt.Println(server.Run(ctx, fmt.Sprintf(":%d", *port)))
 }

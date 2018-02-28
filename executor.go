@@ -29,7 +29,7 @@ func (e Plan) String() string {
 }
 
 type Executor interface {
-	Run(ctx context.Context, plan Plan) error
+	Run(ctx context.Context, plan Plan) ([]requester.Report, error)
 }
 
 func NewExecutor(store db.DB) Executor {
@@ -40,19 +40,21 @@ type executor struct {
 	DB db.DB
 }
 
-func (e *executor) Run(ctx context.Context, plan Plan) error {
+func (e *executor) Run(ctx context.Context, plan Plan) ([]requester.Report, error) {
 	report, err := e.executePlan(ctx, plan)
 	if err != nil {
-		return err
+		return report, fmt.Errorf("executing the plan: %s", err.Error())
 	}
 
 	data := &bytes.Buffer{}
 	if err := json.NewEncoder(data).Encode(report); err != nil {
-		return err
+		return report, fmt.Errorf("encoding the report: %s", err.Error())
 	}
 
-	_, err = e.DB.Set(plan.Name, data)
-	return err
+	if _, err = e.DB.Set(plan.Name, data); err != nil {
+		return report, fmt.Errorf("storing the results: %s", err.Error())
+	}
+	return report, nil
 }
 
 func (e *executor) executePlan(ctx context.Context, plan Plan) ([]requester.Report, error) {
@@ -62,10 +64,11 @@ func (e *executor) executePlan(ctx context.Context, plan Plan) ([]requester.Repo
 	results := []requester.Report{}
 
 	for i := plan.Min; i < plan.Max; i += plan.Steps {
+		fmt.Println("waiting before the next batch...")
 		time.Sleep(plan.Sleep)
 		select {
 		case <-ctx.Done():
-			return results, ctx.Err()
+			return results, fmt.Errorf("executing the step #%d of the plan: %s", i, ctx.Err())
 		default:
 		}
 		log.Printf("runing with C=%d ...\n", i)
@@ -81,7 +84,7 @@ func (e *executor) executePlan(ctx context.Context, plan Plan) ([]requester.Repo
 
 		report := requester.Report{}
 		if err := json.NewDecoder(r).Decode(&report); err != nil {
-			return results, err
+			return results, fmt.Errorf("decoding the results: %s", err.Error())
 		}
 		report.C = i
 		report.URL = plan.Request.URL.String()

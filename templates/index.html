@@ -23,13 +23,20 @@
                   </div>
               </div>
               <div class="row">
-                  <div class="col form-group">
+                  <div class="col-md-10 form-group">
                     <label for="url">URL</label>
                     <input type="text" class="form-control form-control-lg" id="url" name="url" aria-describedby="urlHelp" placeholder="http://example.com/endpoint">
                     <small id="urlHelp" class="form-text text-muted">Enter the URL you want to test.</small>
                   </div>
+                  <div class="col-md-2 form-group">
+                    <label for="req_method">Method</label>
+                    <select class="form-control form-control-lg" id="req_method" name="req_method" >
+                      <option>GET</option>
+                      <option>POST</option>
+                      <option>HEAD</option>
+                    </select>
+                  </div>
               </div>
-
               <div class="row">
                 <div class="col form-group">
                     <label for="min">Min Concurrency</label>
@@ -43,16 +50,25 @@
                     <label for="steps">Step Size</label>
                     <input type="number" class="form-control" id="steps" name="steps" value="15">
                 </div>
-              </div>
-
-              <div class="row">
                 <div class="col form-group">
-                    <label for="duration">Max duration</label>
+                    <label for="duration">Max duration (s)</label>
                     <input type="number" class="form-control" id="duration" name="duration" value="10">
                 </div>
                 <div class="col form-group">
-                    <label for="sleep">Sleep</label>
+                    <label for="sleep">Sleep (s)</label>
                     <input type="number" class="form-control" id="sleep" name="sleep" value="15">
+                </div>
+              </div>
+              <div class="row">
+                <div class="col form-group">
+                  <label for="headers">Headers</label>
+                  <small id="headersHelp" class="form-text text-muted">Enter the list of headers to send, one per line.</small>
+                  <textarea class="form-control" id="headers" name="headers" aria-describedby="headersHelp" rows="10"></textarea>
+                </div>
+                <div class="col form-group">
+                  <label for="body">Body</label>
+                  <small id="bodyHelp" class="form-text text-muted">Enter the body to send with your request.</small>
+                  <textarea class="form-control" id="body" name="body" rows="10" aria-describedby="bodyHelp"></textarea>
                 </div>
               </div>
               <button type="submit" class="btn btn-primary">Submit</button>
