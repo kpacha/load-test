@@ -50,6 +50,7 @@ func (r Requester) Run(ctx context.Context, c int) io.Reader {
 		body, err = ioutil.ReadAll(r.Request.Body)
 		if err != nil {
 			fmt.Println("request body reading error:", err.Error())
+			return nil
 		}
 	}
 
