@@ -6,11 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"io/ioutil"
-
-	"fmt"
-
-	"github.com/rakyll/hey/requester"
+	hey "github.com/rakyll/hey/requester"
 )
 
 func NewCSV(req *http.Request) Requester {
@@ -22,45 +18,40 @@ func NewJSON(req *http.Request) Requester {
 }
 
 func New(req *http.Request, tmpl string) Requester {
-	return Requester{
+	body := new(bytes.Buffer)
+	if req != nil && req.Body != nil {
+		body.ReadFrom(req.Body)
+		req.Body.Close()
+	}
+	return requester{
 		Request: req,
+		Body:    body.Bytes(),
 		N:       10000,
 		Timeout: 5,
 		Tmpl:    tmpl,
 	}
 }
 
-type Requester struct {
+type Requester interface {
+	Run(ctx context.Context, c int) io.Reader
+}
+
+type requester struct {
 	Request *http.Request
+	Body    []byte
 	N       int
 	Timeout int
 	Tmpl    string
 }
 
-func (r Requester) Run(ctx context.Context, c int) io.Reader {
-	buf := bytes.NewBuffer([]byte{})
-	var (
-		body []byte
-		err  error
-	)
+func (r requester) Run(ctx context.Context, c int) io.Reader {
+	buf := new(bytes.Buffer)
 
-	defer r.Request.Body.Close()
-
-	if r.Request.Body != nil {
-		body, err = ioutil.ReadAll(r.Request.Body)
-		if err != nil {
-			fmt.Println("request body reading error:", err.Error())
-			return nil
-		}
-	}
-
-	r.Request.Body = ioutil.NopCloser(bytes.NewBuffer(body))
-
-	work := requester.Work{
+	work := hey.Work{
 		N:           r.N,
 		C:           c,
 		Timeout:     r.Timeout,
-		RequestBody: body,
+		RequestBody: r.Body,
 		Request:     r.Request,
 		Output:      r.Tmpl,
 		Writer:      buf,
@@ -72,7 +63,7 @@ func (r Requester) Run(ctx context.Context, c int) io.Reader {
 	localCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	go func(localCtx context.Context, work requester.Work) {
+	go func(localCtx context.Context, work hey.Work) {
 		<-localCtx.Done()
 		work.Stop()
 	}(localCtx, work)

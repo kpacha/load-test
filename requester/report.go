@@ -3,11 +3,11 @@ package requester
 import (
 	"time"
 
-	"github.com/rakyll/hey/requester"
+	hey "github.com/rakyll/hey/requester"
 )
 
 type Report struct {
-	requester.Report
+	hey.Report
 	C             int
 	URL           string
 	pdf           Sequence
