@@ -8,6 +8,8 @@ import (
 
 	"io/ioutil"
 
+	"fmt"
+
 	"github.com/rakyll/hey/requester"
 )
 
@@ -37,12 +39,20 @@ type Requester struct {
 
 func (r Requester) Run(ctx context.Context, c int) io.Reader {
 	buf := bytes.NewBuffer([]byte{})
-	var body []byte
-	r.Request.Body.Close()
+	var (
+		body []byte
+		err  error
+	)
+
+	defer r.Request.Body.Close()
 
 	if r.Request.Body != nil {
-		body, _ = ioutil.ReadAll(r.Request.Body)
+		body, err = ioutil.ReadAll(r.Request.Body)
+		if err != nil {
+			fmt.Println("request body reading error:", err.Error())
+		}
 	}
+
 	r.Request.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 
 	work := requester.Work{
