@@ -65,6 +65,7 @@ func (e *executor) executePlan(ctx context.Context, plan Plan) ([]requester.Repo
 	defer work.Unlock()
 
 	results := []requester.Report{}
+	requestr := e.RequesterFactory(plan.Request)
 
 	for i := plan.Min; i < plan.Max; i += plan.Steps {
 		fmt.Println("waiting before the next batch...")
@@ -83,7 +84,7 @@ func (e *executor) executePlan(ctx context.Context, plan Plan) ([]requester.Repo
 			localCtx = lctx
 		}
 
-		r := e.RequesterFactory(plan.Request).Run(localCtx, i)
+		r := requestr.Run(localCtx, i)
 
 		report := requester.Report{}
 		if err := json.NewDecoder(r).Decode(&report); err != nil {
