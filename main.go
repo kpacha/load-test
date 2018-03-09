@@ -11,9 +11,12 @@ import (
 	"github.com/kpacha/load-test/db"
 )
 
+//go:generate statik -src=templates
+
 func main() {
 	storePath := flag.String("f", ".", "path to use as store")
 	port := flag.Int("p", 7879, "port to expose the html ui")
+	isDevel := flag.Bool("d", false, "devel mode enabled")
 	inMemory := flag.Bool("m", false, "use in-memory store instead of the fs persistent one")
 	flag.Parse()
 
@@ -35,7 +38,7 @@ func main() {
 		cancel()
 	}()
 
-	server, err := NewServer(gin.New(), store, NewExecutor(store))
+	server, err := NewServer(gin.New(), store, NewExecutor(store), *isDevel)
 	if err != nil {
 		fmt.Println("error building the server:", err.Error())
 		return

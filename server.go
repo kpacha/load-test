@@ -16,22 +16,26 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kpacha/load-test/db"
 	"github.com/kpacha/load-test/requester"
+	_ "github.com/kpacha/load-test/statik"
+	"github.com/rakyll/statik/fs"
 )
 
 type Server interface {
 	Run(ctx context.Context, addr string) error
 }
 
-func NewServer(engine *gin.Engine, db db.DB, executor Executor) (*SimpleServer, error) {
+func NewServer(engine *gin.Engine, db db.DB, executor Executor, isDevel bool) (*SimpleServer, error) {
 	s := &SimpleServer{
 		Engine:   engine,
 		DB:       db,
 		Executor: executor,
+		IsDevel:  isDevel,
 	}
-	s.Engine.SetFuncMap(template.FuncMap{
-		"formatLatency": formatLatency,
-	})
-	s.Engine.LoadHTMLGlob(templateFilePattern)
+	tmpl, err := s.getHTMLTemplate()
+	if err != nil {
+		return nil, err
+	}
+	s.Engine.SetHTMLTemplate(tmpl)
 
 	s.Engine.POST("/test", s.testHandler)
 	s.Engine.GET("/browse/:id", s.browseHandler)
@@ -46,6 +50,40 @@ type SimpleServer struct {
 	Engine   *gin.Engine
 	DB       db.DB
 	Executor Executor
+	IsDevel  bool
+}
+
+func (s *SimpleServer) getHTMLTemplate() (*template.Template, error) {
+	funcMap := template.FuncMap{
+		"formatLatency": formatLatency,
+	}
+	if s.IsDevel {
+		tmpl, err := template.ParseGlob(templateFilePattern)
+		return tmpl.Funcs(funcMap), err
+	}
+	statikFS, err := fs.New()
+	if err != nil {
+		return nil, err
+	}
+
+	buff := new(bytes.Buffer)
+
+	for _, name := range []string{
+		"/browse.html",
+		"/index.html",
+		"/partials.html",
+	} {
+		f, err := statikFS.Open(name)
+		if err != nil {
+			fmt.Printf("opening file %s: %s\n", name, err.Error())
+			return nil, err
+		}
+		defer f.Close()
+
+		buff.ReadFrom(f)
+	}
+
+	return template.New("main").Funcs(funcMap).Parse(buff.String())
 }
 
 func (s *SimpleServer) Run(ctx context.Context, addr string) error {
