@@ -35,6 +35,7 @@ Check the help for details on the accepted flags...
 ```
 $ load-test -h
 Usage of ./load-test:
+  -d	devel mode enabled
   -f string
     	path to use as store (default ".")
   -m	use in-memory store instead of the fs persistent one
@@ -62,5 +63,5 @@ And the web will be running at http://localhost:7879/
 
 - Expose the data collected per request in the test browser
 - Search for ulrs and tests names
-- Support curstom request headers and body
+- ~~Support curstom request headers and body~~
 - Support complex use cases
