@@ -26,7 +26,7 @@ func New(req *http.Request, tmpl string) Requester {
 	return requester{
 		Request: req,
 		Body:    body.Bytes(),
-		N:       10000,
+		N:       1000000,
 		Timeout: 5,
 		Tmpl:    tmpl,
 	}
