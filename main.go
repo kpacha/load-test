@@ -12,8 +12,6 @@ import (
 	"github.com/kpacha/load-test/db"
 )
 
-//go:generate statik -src=templates
-
 //go:embed templates/browse.html
 //go:embed templates/index.html
 //go:embed templates/partials.html
