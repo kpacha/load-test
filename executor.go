@@ -32,7 +32,7 @@ type Executor interface {
 	Run(ctx context.Context, plan Plan) ([]requester.Report, error)
 }
 
-type RequesterFactory func(req *http.Request) requester.Requester
+type RequesterFactory func(req *http.Request, timeout time.Duration) requester.Requester
 
 func NewExecutor(store db.DB) Executor {
 	return &executor{store, requester.NewJSON}
@@ -57,6 +57,7 @@ func (e *executor) Run(ctx context.Context, plan Plan) ([]requester.Report, erro
 	if _, err = e.DB.Set(plan.Name, data); err != nil {
 		return report, fmt.Errorf("storing the results: %s", err.Error())
 	}
+	log.Println("plan execution completed")
 	return report, nil
 }
 
@@ -65,10 +66,10 @@ func (e *executor) executePlan(ctx context.Context, plan Plan) ([]requester.Repo
 	defer work.Unlock()
 
 	results := []requester.Report{}
-	requestr := e.RequesterFactory(plan.Request)
+	requestr := e.RequesterFactory(plan.Request, plan.Duration)
 
 	for i := plan.Min; i < plan.Max; i += plan.Steps {
-		fmt.Println("waiting before the next batch...")
+		log.Println("waiting before the next batch...")
 		time.Sleep(plan.Sleep)
 		select {
 		case <-ctx.Done():

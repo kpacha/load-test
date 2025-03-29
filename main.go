@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"flag"
 	"fmt"
 	"os"
@@ -12,6 +13,11 @@ import (
 )
 
 //go:generate statik -src=templates
+
+//go:embed templates/browse.html
+//go:embed templates/index.html
+//go:embed templates/partials.html
+var fs embed.FS
 
 func main() {
 	storePath := flag.String("f", ".", "path to use as store")
@@ -38,7 +44,7 @@ func main() {
 		cancel()
 	}()
 
-	server, err := NewServer(gin.New(), store, NewExecutor(store), *isDevel)
+	server, err := NewServer(gin.Default(), store, NewExecutor(store), *isDevel)
 	if err != nil {
 		fmt.Println("error building the server:", err.Error())
 		return

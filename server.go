@@ -11,13 +11,12 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kpacha/load-test/db"
 	"github.com/kpacha/load-test/requester"
-	_ "github.com/kpacha/load-test/statik"
-	"github.com/rakyll/statik/fs"
 )
 
 type Server interface {
@@ -61,19 +60,15 @@ func (s *SimpleServer) getHTMLTemplate() (*template.Template, error) {
 		tmpl, err := template.ParseGlob(templateFilePattern)
 		return tmpl.Funcs(funcMap), err
 	}
-	statikFS, err := fs.New()
-	if err != nil {
-		return nil, err
-	}
 
 	buff := new(bytes.Buffer)
 
 	for _, name := range []string{
-		"/browse.html",
-		"/index.html",
-		"/partials.html",
+		"templates/browse.html",
+		"templates/index.html",
+		"templates/partials.html",
 	} {
-		f, err := statikFS.Open(name)
+		f, err := fs.Open(name)
 		if err != nil {
 			fmt.Printf("opening file %s: %s\n", name, err.Error())
 			return nil, err
@@ -121,8 +116,23 @@ func (s *SimpleServer) homeHandler(c *gin.Context) {
 	})
 }
 
+var (
+	mutex = new(sync.Mutex)
+	cache = map[string]gin.H{}
+)
+
 func (s *SimpleServer) browseHandler(c *gin.Context) {
 	id := c.Param("id")
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if res, ok := cache[id]; ok {
+		keys, _ := s.DB.Keys()
+		res["keys"] = keys
+		c.HTML(200, "browse", res)
+		return
+	}
+
 	r, err := s.DB.Get(id)
 	switch err {
 	case db.ErrNotFound:
@@ -139,16 +149,20 @@ func (s *SimpleServer) browseHandler(c *gin.Context) {
 		c.AbortWithError(500, err)
 		return
 	}
+	result := gin.H{
+		"reports": reports,
+		"id":      id,
+	}
+	cache[id] = result
+
 	keys, err := s.DB.Keys()
 	if err != nil {
 		c.AbortWithError(500, err)
 		return
 	}
-	c.HTML(200, "browse", gin.H{
-		"keys":    keys,
-		"reports": reports,
-		"id":      id,
-	})
+	result["keys"] = keys
+
+	c.HTML(200, "browse", result)
 }
 
 func (s *SimpleServer) testHandler(c *gin.Context) {
@@ -158,9 +172,11 @@ func (s *SimpleServer) testHandler(c *gin.Context) {
 		c.AbortWithError(500, err)
 		return
 	}
+	name := c.PostForm("name")
+	log.Println("starting the test", name)
 
 	if _, err := s.Executor.Run(c, Plan{
-		Name:     c.PostForm("name"),
+		Name:     name,
 		Min:      getInt(c, "min"),
 		Max:      getInt(c, "max"),
 		Steps:    getInt(c, "steps"),
