@@ -16,14 +16,7 @@ HTTP Load testing web tool powered by `hey`
 1. Clone the repo
 
 ```
-$ go get github.com/kpacha/load-test
-```
-
-2. Install dependencies and build
-
-```
-$ cd $GOPATH/src/github.com/kpacha/load-test
-$ make prepare all
+$ go install github.com/kpacha/load-test
 ```
 
 And the `load-test` binary should be in your `$GOPATH/bin` folder. Make sure it's also in your `$PATH`!
@@ -65,3 +58,4 @@ And the web will be running at http://localhost:7879/
 - Search for ulrs and tests names
 - ~~Support curstom request headers and body~~
 - Support complex use cases
+- Compare results of two tests

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
+	"os"
 	"strings"
 )
 
@@ -17,7 +18,7 @@ const fsBDExtension = ".json"
 type fileSystem string
 
 func (f *fileSystem) Get(key string) (io.Reader, error) {
-	data, err := ioutil.ReadFile(string(*f) + "/" + key + fsBDExtension)
+	data, err := os.ReadFile(string(*f) + "/" + key + fsBDExtension)
 	if err != nil {
 		return nil, ErrNotFound
 	}
