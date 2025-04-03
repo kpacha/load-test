@@ -40,7 +40,7 @@ func NewServer(engine *gin.Engine, db db.DB, executor Executor, isDevel bool) (*
 	s.Engine.POST("/flush-cache", s.flushAllCacheHandler)
 	s.Engine.POST("/flush-cache/:id", s.flushCacheHandler)
 	s.Engine.GET("/browse/:id", s.browseHandler)
-	s.Engine.GET("/dowload/:id", s.downloadHandler)
+	s.Engine.GET("/download/:id", s.downloadHandler)
 	s.Engine.GET("/", s.homeHandler)
 
 	return s, nil
