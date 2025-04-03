@@ -4,13 +4,51 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
+
+	"github.com/aws/aws-sdk-go/aws/session"
 )
 
-func NewFS(path string) DB {
+func NewFS(path string, s *session.Session, bucket string) (DB, error) {
 	fs := fileSystem(path)
-	return &fs
+	s3, err := NewS3(s, &fs, bucket)
+	if err != nil {
+		return &fs, err
+	}
+	f := persistedFS{
+		fs: &fs,
+		s3: s3,
+	}
+	return f, nil
+}
+
+type persistedFS struct {
+	fs *fileSystem
+	s3 S3
+}
+
+func (f persistedFS) Get(key string) (io.Reader, error) {
+	return f.fs.Get(key)
+}
+
+func (f persistedFS) Keys() ([]string, error) {
+	return f.fs.Keys()
+}
+
+func (f persistedFS) Set(key string, r io.Reader) (int, error) {
+	n, err := f.fs.Set(key, r)
+	if err != nil {
+		return n, err
+	}
+	go func() {
+		if err := f.s3.Upload(key); err != nil {
+			log.Printf("uploading '%s' to S3: %s", key, err)
+		}
+	}()
+
+	return n, nil
 }
 
 const fsBDExtension = ".json"
@@ -45,9 +83,13 @@ func (f *fileSystem) Set(key string, r io.Reader) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	err = ioutil.WriteFile(string(*f)+"/"+key+fsBDExtension, data, 0644)
+	err = ioutil.WriteFile(f.GetPath(key), data, 0644)
 	if err != nil {
 		return 0, err
 	}
 	return len(data), nil
+}
+
+func (f *fileSystem) GetPath(key string) string {
+	return string(*f) + "/" + key + fsBDExtension
 }

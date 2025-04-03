@@ -5,9 +5,12 @@ import (
 	"embed"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/gin-gonic/gin"
 	"github.com/kpacha/load-test/db"
 )
@@ -28,7 +31,14 @@ func main() {
 	if *inMemory {
 		store = db.NewInMemory()
 	} else {
-		store = db.NewFS(*storePath)
+		s, err := session.NewSession(&aws.Config{Region: aws.String(os.Getenv("S3_REGION"))})
+		if err != nil {
+			log.Fatal(err)
+		}
+		store, err = db.NewFS(*storePath, s, os.Getenv("S3_BUCKET"))
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	quit := make(chan os.Signal)
