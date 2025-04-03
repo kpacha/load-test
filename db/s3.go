@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"net/http"
 	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -11,13 +13,14 @@ import (
 )
 
 type S3 struct {
+	id     string
 	sess   *session.Session
 	f      *fileSystem
 	bucket string
 }
 
 func NewS3(s *session.Session, f *fileSystem, bucket string) (S3, error) {
-	return S3{sess: s, f: f, bucket: bucket}, nil
+	return S3{sess: s, f: f, bucket: bucket, id: time.Now().String()}, nil
 }
 
 func (s S3) Upload(key string) error {
@@ -39,7 +42,7 @@ func (s S3) Upload(key string) error {
 	// of the file you're uploading.
 	_, err = s3.New(s.sess).PutObject(&s3.PutObjectInput{
 		Bucket:               aws.String(s.bucket),
-		Key:                  aws.String(fileDir),
+		Key:                  aws.String(filepath.Join(s.id, fileDir)),
 		ACL:                  aws.String("private"),
 		Body:                 bytes.NewReader(buffer),
 		ContentLength:        aws.Int64(size),
