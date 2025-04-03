@@ -37,7 +37,10 @@ func NewServer(engine *gin.Engine, db db.DB, executor Executor, isDevel bool) (*
 	s.Engine.SetHTMLTemplate(tmpl)
 
 	s.Engine.POST("/test", s.testHandler)
+	s.Engine.POST("/flush-cache", s.flushAllCacheHandler)
+	s.Engine.POST("/flush-cache/:id", s.flushCacheHandler)
 	s.Engine.GET("/browse/:id", s.browseHandler)
+	s.Engine.GET("/dowload/:id", s.downloadHandler)
 	s.Engine.GET("/", s.homeHandler)
 
 	return s, nil
@@ -121,6 +124,20 @@ var (
 	cache = map[string]gin.H{}
 )
 
+func (s *SimpleServer) flushAllCacheHandler(c *gin.Context) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	cache = map[string]gin.H{}
+	c.Redirect(301, "/")
+}
+
+func (s *SimpleServer) flushCacheHandler(c *gin.Context) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	delete(cache, c.Param("id"))
+	c.Redirect(301, "/")
+}
+
 func (s *SimpleServer) browseHandler(c *gin.Context) {
 	id := c.Param("id")
 	mutex.Lock()
@@ -163,6 +180,50 @@ func (s *SimpleServer) browseHandler(c *gin.Context) {
 	result["keys"] = keys
 
 	c.HTML(200, "browse", result)
+}
+
+func (s *SimpleServer) downloadHandler(c *gin.Context) {
+	id := c.Param("id")
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if res, ok := cache[id]; ok {
+		keys, _ := s.DB.Keys()
+		res["keys"] = keys
+		c.JSON(200, res)
+		return
+	}
+
+	r, err := s.DB.Get(id)
+	switch err {
+	case db.ErrNotFound:
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	case nil:
+	default:
+		c.AbortWithError(500, err)
+		return
+	}
+
+	reports := []requester.Report{}
+	if err := json.NewDecoder(r).Decode(&reports); err != nil {
+		c.AbortWithError(500, err)
+		return
+	}
+	result := gin.H{
+		"reports": reports,
+		"id":      id,
+	}
+	cache[id] = result
+
+	keys, err := s.DB.Keys()
+	if err != nil {
+		c.AbortWithError(500, err)
+		return
+	}
+	result["keys"] = keys
+
+	c.JSON(200, result)
 }
 
 func (s *SimpleServer) testHandler(c *gin.Context) {

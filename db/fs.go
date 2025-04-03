@@ -41,7 +41,7 @@ func (f *fileSystem) Keys() ([]string, error) {
 }
 
 func (f *fileSystem) Set(key string, r io.Reader) (int, error) {
-	data, err := ioutil.ReadAll(r)
+	data, err := io.ReadAll(r)
 	if err != nil {
 		return 0, err
 	}
