@@ -37,8 +37,8 @@ func NewServer(engine *gin.Engine, db db.DB, executor Executor, isDevel bool) (*
 	s.Engine.SetHTMLTemplate(tmpl)
 
 	s.Engine.POST("/test", s.testHandler)
-	s.Engine.POST("/flush-cache", s.flushAllCacheHandler)
-	s.Engine.POST("/flush-cache/:id", s.flushCacheHandler)
+	s.Engine.GET("/flush-cache", s.flushAllCacheHandler)
+	s.Engine.GET("/flush-cache/:id", s.flushCacheHandler)
 	s.Engine.GET("/browse/:id", s.browseHandler)
 	s.Engine.GET("/download/:id", s.downloadHandler)
 	s.Engine.GET("/", s.homeHandler)
